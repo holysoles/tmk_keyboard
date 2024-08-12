@@ -1013,28 +1013,30 @@ uint8_t IBMPCConverter::translate_5576_cs2(uint8_t code) {
 
 int8_t IBMPCConverter::process_cs2(uint8_t code)
 {
+    xprintf("DEBUG: got code: %02X\n", code);
     if (code == 0x7C) {
-        xprintf("\nDEBUG: Toggling KVM\n"); //TODO this isnt debounced so is toggled twice
+        xprintf("DEBUG: Toggling KVM\n", code); //TODO this isnt debounced so is toggled twice
         
-        // Allow output on PB5. For some reason doing this during init leaves PB5 high always
+        // Allow output on PB5, init high
         DDRB |= (1 << PB5);
-        xprintf("DEBUG: Pin PB5 set output\n");
-
-        // Set PB5 (arduino pin 9) high
-        PORTB |= (1 << PB5);
-        xprintf("DEBUG: Pin PB5 set high\n");
+        PORTB &= ~(1 << PB5);
+        
         uint16_t start_time = timer_read();
+        // Set PB5 (arduino pin 9) low
+        //PORTB |= (1 << PB5);
+        xprintf("DEBUG: Pin set low, waiting 150ms\n");
+
         while (timer_elapsed(start_time) < 150) {
-            // Wait here until 150ms has passed to mock the button press
+            // Wait here until 150ms has passed
         }
 
-        // Set PB5 low
-        PORTB &= ~(1 << PB5);
-        xprintf("DEBUG: Pin PB5 set low\n");
+        // Set PB5 high
+        //PORTB &= ~(1 << PB5);
+        PORTB |= (1 << PB5);
 
-        // Undo our modifications to PB5
+        xprintf("DEBUG: Pin set high\n");
+        // remove output on PB5
         DDRB &= ~(1 << PB5);
-        xprintf("DEBUG: Pin PB5 removed output\n");
     }
     switch (state_cs2) {
         case CS2_INIT:
