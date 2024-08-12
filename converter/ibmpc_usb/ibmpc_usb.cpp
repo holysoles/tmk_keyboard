@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hook.h"
 #include "ibmpc.hpp"
 #include "ibmpc_usb.hpp"
+#include <avr/io.h>
 
 
 // Converter
@@ -1012,6 +1013,28 @@ uint8_t IBMPCConverter::translate_5576_cs2(uint8_t code) {
 
 int8_t IBMPCConverter::process_cs2(uint8_t code)
 {
+    xprintf("DEBUG: got code: %02X\n", code);
+    if (code == 0x7C) {
+        xprintf("DEBUG: Toggling KVM\n", code); //TODO this isnt debounced so is toggled twice
+        
+        // Allow output on PB5
+        DDRB |= (1 << PB5);
+        
+        uint16_t start_time = timer_read();
+        // Set PB5 (arduino pin 9) high
+        PORTB |= (1 << PB5);
+        xprintf("DEBUG: Pin set high\n");
+
+        while (timer_elapsed(start_time) < 150) {
+            // Wait here until 150ms has passed
+        }
+
+        // Set PB5 low
+        PORTB &= ~(1 << PB5);
+        xprintf("DEBUG: Pin set low\n");
+        // remove output on PB5
+        DDRB &= ~(1 << PB5);
+    }
     switch (state_cs2) {
         case CS2_INIT:
             if (0xAB90 == keyboard_id || 0xAB91 == keyboard_id) {
