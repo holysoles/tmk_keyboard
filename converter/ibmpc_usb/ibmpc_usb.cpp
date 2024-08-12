@@ -41,6 +41,9 @@ IBMPCConverter converter1 = IBMPCConverter(IBMPC::interface1);
 
 void hook_early_init(void)
 {
+    // Allow output on PB5
+    DDRB |= (1 << PB5);
+
     converter0.init();
 #if defined(IBMPC_CLOCK_BIT1) && defined(IBMPC_DATA_BIT1)
     converter1.init();
@@ -1013,14 +1016,13 @@ uint8_t IBMPCConverter::translate_5576_cs2(uint8_t code) {
 
 int8_t IBMPCConverter::process_cs2(uint8_t code)
 {
+    // If PrintScreen is input
     if (code == 0x7C) {
-        xprintf("DEBUG: Toggling KVM\n", code); //TODO this isnt debounced so is toggled twice
+        xprintf("\nDEBUG: Toggling KVM\n", code); //This isnt debounced so is toggled twice
         
         // Allow output on PB5, init low
-        DDRB |= (1 << PB5);
-        xprintf("DEBUG: Added PB5 as output\n");
         PORTB &= ~(1 << PB5);
-        xprintf("DEBUG: Set PB5 LOW\n");
+        xprintf("DEBUG: Set PB5 LOW, waiting 150ms\n");
         
         uint16_t start_time = timer_read();
         while (timer_elapsed(start_time) < 150) {
@@ -1031,9 +1033,8 @@ int8_t IBMPCConverter::process_cs2(uint8_t code)
         PORTB |= (1 << PB5);
         xprintf("DEBUG: Pin set HIGH\n");
 
-        // remove output on PB5
-        DDRB &= ~(1 << PB5);
-        xprintf("DEBUG: Removed PB5 as output\n");
+        // return so we don't actually trigger an input
+        return -1;
     }
     switch (state_cs2) {
         case CS2_INIT:
