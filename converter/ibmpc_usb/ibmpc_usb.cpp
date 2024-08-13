@@ -43,6 +43,7 @@ void hook_early_init(void)
 {
     // Allow output on PB5
     DDRB |= (1 << PB5);
+    PORTB |= (1 << PB5);
 
     converter0.init();
 #if defined(IBMPC_CLOCK_BIT1) && defined(IBMPC_DATA_BIT1)
@@ -1019,7 +1020,7 @@ int8_t IBMPCConverter::process_cs2(uint8_t code)
     // If PrintScreen is input
     if (code == 0x7C) {
         xprintf("\nDEBUG: Toggling KVM\n", code); //This isnt debounced so is toggled twice
-        
+
         // Allow output on PB5, init low
         PORTB &= ~(1 << PB5);
         xprintf("DEBUG: Set PB5 LOW, waiting 150ms\n");
@@ -1032,9 +1033,6 @@ int8_t IBMPCConverter::process_cs2(uint8_t code)
         // Set PB5 high
         PORTB |= (1 << PB5);
         xprintf("DEBUG: Pin set HIGH\n");
-
-        // return so we don't actually trigger an input
-        return -1;
     }
     switch (state_cs2) {
         case CS2_INIT:
