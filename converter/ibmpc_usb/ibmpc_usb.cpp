@@ -919,7 +919,23 @@ uint8_t IBMPCConverter::cs2_e0code(uint8_t code) {
         case 0x77: return 0x00; // Unicomp New Model M Pause/Break key fix
         case 0x7A: return 0x56; // page down
         case 0x7D: return 0x5E; // page up
-        case 0x7C: return 0x7F; // Print Screen
+        case 0x7C: // Print Screen
+        {    xprintf("\nDEBUG: Toggling KVM\n", code); //This isnt debounced so is toggled twice
+
+            // Allow output on PB5, init low
+            PORTB &= ~(1 << PB5);
+            xprintf("DEBUG: Set PB5 LOW, waiting 150ms\n");
+            
+            uint16_t start_time_kvm  = timer_read();
+            while (timer_elapsed(start_time_kvm) < 150) {
+                // Wait here until 150ms has passed
+            }
+
+            // Set PB5 high
+            PORTB |= (1 << PB5);
+            xprintf("DEBUG: Pin set HIGH\n");
+            return 0x7F;
+        }
         case 0x7E: return 0x00; // Control'd Pause
         case 0x21: return 0x65; // volume down
         case 0x32: return 0x6E; // volume up
@@ -1017,23 +1033,6 @@ uint8_t IBMPCConverter::translate_5576_cs2(uint8_t code) {
 
 int8_t IBMPCConverter::process_cs2(uint8_t code)
 {
-    // If PrintScreen is input
-    if (code == 0x7C) {
-        xprintf("\nDEBUG: Toggling KVM\n", code); //This isnt debounced so is toggled twice
-
-        // Allow output on PB5, init low
-        PORTB &= ~(1 << PB5);
-        xprintf("DEBUG: Set PB5 LOW, waiting 150ms\n");
-        
-        uint16_t start_time = timer_read();
-        while (timer_elapsed(start_time) < 150) {
-            // Wait here until 150ms has passed
-        }
-
-        // Set PB5 high
-        PORTB |= (1 << PB5);
-        xprintf("DEBUG: Pin set HIGH\n");
-    }
     switch (state_cs2) {
         case CS2_INIT:
             if (0xAB90 == keyboard_id || 0xAB91 == keyboard_id) {
